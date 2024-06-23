@@ -1,117 +1,158 @@
-class Hangman {
-  constructor(_canvas) {
-    if (!_canvas) {
-      throw new Error(`invalid canvas provided`);
+export default class Hangman {
+    constructor(canvas) {
+        if (!canvas) {
+            throw new Error('Invalid canvas provided');
+        }
+
+        this.canvas = canvas;
+        this.ctx = this.canvas.getContext('2d');
+        this.word = '';
+        this.guesses = [];
+        this.isOver = false;
+        this.didWin = false;
     }
 
-    this.canvas = _canvas;
-    this.ctx = this.canvas.getContext(`2d`);
-  }
+    getRandomWord(difficulty) {
+        return fetch(`https://it3049c-hangman.fly.dev?difficulty=${difficulty}`)
+            .then(response => response.json())
+            .then(data => data.word);
+    }
 
-  /**
-   * This function takes a difficulty string as a parameter
-   * would use the Fetch API to get a random word from the Hangman
-   * To get an easy word: https://it3049c-hangman.fly.dev?difficulty=easy
-   * To get an medium word: https://it3049c-hangman.fly.dev?difficulty=medium
-   * To get an hard word: https://it3049c-hangman.fly.dev?difficulty=hard
-   * The results is a json object that looks like this:
-   *    { word: "book" }
-   * */
-  getRandomWord(difficulty) {
-    return fetch(
-      `https://it3049c-hangman.fly.dev?difficulty=${difficulty}`
-    )
-      .then((r) => r.json())
-      .then((r) => r.word);
-  }
+    start(difficulty, callback) {
+        this.getRandomWord(difficulty)
+            .then(word => {
+                this.word = word.toLowerCase();
+                this.clearCanvas();
+                this.drawBase();
+                this.guesses = [];
+                this.isOver = false;
+                this.didWin = false;
+                callback();
+            })
+            .catch(error => console.error('Error starting game:', error));
+    }
 
-  /**
-   *
-   * @param {string} difficulty a difficulty string to be passed to the getRandomWord Function
-   * @param {function} next callback function to be called after a word is received from the API.
-   */
-  start(difficulty, next) {
-    // get word and set it to the class's this.word
-    // clear canvas
-    // draw base
-    // reset this.guesses to empty array
-    // reset this.isOver to false
-    // reset this.didWin to false
-  }
+    guess(letter) {
+        if (!letter || !/^[a-zA-Z]$/.test(letter)) {
+            throw new Error('Please enter a valid letter.');
+        }
 
-  /**
-   *
-   * @param {string} letter the guessed letter.
-   */
-  guess(letter) {
-    // Check if nothing was provided and throw an error if so
-    // Check for invalid cases (numbers, symbols, ...) throw an error if it is
-    // Check if more than one letter was provided. throw an error if it is.
-    // if it's a letter, convert it to lower case for consistency.
-    // check if this.guesses includes the letter. Throw an error if it has been guessed already.
-    // add the new letter to the guesses array.
-    // check if the word includes the guessed letter:
-    //    if it's is call checkWin()
-    //    if it's not call onWrongGuess()
-  }
+        letter = letter.toLowerCase();
 
-  checkWin() {
-    // using the word and the guesses array, figure out how many remaining unknowns.
-    // if zero, set both didWin, and isOver to true
-  }
+        if (this.guesses.includes(letter)) {
+            throw new Error('You have already guessed this letter.');
+        }
 
-  /**
-   * Based on the number of wrong guesses, this function would determine and call the appropriate drawing function
-   * drawHead, drawBody, drawRightArm, drawLeftArm, drawRightLeg, or drawLeftLeg.
-   * if the number wrong guesses is 6, then also set isOver to true and didWin to false.
-   */
-  onWrongGuess() {}
+        this.guesses.push(letter);
 
-  /**
-   * This function will return a string of the word placeholder
-   * It will have underscores in the correct number and places of the un-guessed letters.
-   * i.e.: if the word is BOOK, and the letter O has been guessed, this would return _ O O _
-   */
-  getWordHolderText() {
-    return;
-  }
+        if (this.word.includes(letter)) {
+            this.checkWin();
+        } else {
+            this.onWrongGuess();
+        }
+    }
 
-  /**
-   * This function returns a string of all the previous guesses, separated by a comma
-   * This would return something that looks like
-   * (Guesses: A, B, C)
-   * Hint: use the Array.prototype.join method.
-   */
-  getGuessesText() {
-    return ``;
-  }
+    checkWin() {
+        for (const char of this.word) {
+            if (!this.guesses.includes(char)) {
+                return;
+            }
+        }
+        this.didWin = true;
+        this.isOver = true;
+    }
 
-  /**
-   * Clears the canvas
-   */
-  clearCanvas() {
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-  }
+    onWrongGuess() {
+        switch (this.guesses.length) {
+            case 1:
+                this.drawHead();
+                break;
+            case 2:
+                this.drawBody();
+                break;
+            case 3:
+                this.drawLeftArm();
+                break;
+            case 4:
+                this.drawRightArm();
+                break;
+            case 5:
+                this.drawLeftLeg();
+                break;
+            case 6:
+                this.drawRightLeg();
+                this.isOver = true;
+                break;
+            default:
+                break;
+        }
+    }
 
-  /**
-   * Draws the hangman base
-   */
-  drawBase() {
-    this.ctx.fillRect(95, 10, 150, 10); // Top
-    this.ctx.fillRect(245, 10, 10, 50); // Noose
-    this.ctx.fillRect(95, 10, 10, 400); // Main beam
-    this.ctx.fillRect(10, 410, 175, 10); // Base
-  }
+    getWordHolderText() {
+        let displayWord = '';
+        for (const char of this.word) {
+            if (this.guesses.includes(char)) {
+                displayWord += char + ' ';
+            } else {
+                displayWord += '_ ';
+            }
+        }
+        return displayWord.trim();
+    }
 
-  drawHead() {}
+    getGuessesText() {
+        return `Guesses: ${this.guesses.join(', ')}`;
+    }
 
-  drawBody() {}
+    clearCanvas() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
 
-  drawLeftArm() {}
+    drawBase() {
+        this.ctx.fillRect(95, 10, 150, 10); // Top
+        this.ctx.fillRect(245, 10, 10, 50); // Noose
+        this.ctx.fillRect(95, 10, 10, 400); // Main beam
+        this.ctx.fillRect(10, 410, 175, 10); // Base
+    }
 
-  drawRightArm() {}
+    drawHead() {
+        this.ctx.beginPath();
+        this.ctx.arc(250, 80, 30, 0, Math.PI * 2); // Head
+        this.ctx.stroke();
+    }
 
-  drawLeftLeg() {}
+    drawBody() {
+        this.ctx.beginPath();
+        this.ctx.moveTo(250, 110); // Body
+        this.ctx.lineTo(250, 250);
+        this.ctx.stroke();
+    }
 
-  drawRightLeg() {}
+    drawLeftArm() {
+        this.ctx.beginPath();
+        this.ctx.moveTo(250, 130); // Left Arm
+        this.ctx.lineTo(200, 170);
+        this.ctx.stroke();
+    }
+
+    drawRightArm() {
+        this.ctx.beginPath();
+        this.ctx.moveTo(250, 130); // Right Arm
+        this.ctx.lineTo(300, 170);
+        this.ctx.stroke();
+    }
+
+    drawLeftLeg() {
+        this.ctx.beginPath();
+        this.ctx.moveTo(250, 250); // Left Leg
+        this.ctx.lineTo(200, 300);
+        this.ctx.stroke();
+    }
+
+    drawRightLeg() {
+        this.ctx.beginPath();
+        this.ctx.moveTo(250, 250); // Right Leg
+        this.ctx.lineTo(300, 300);
+        this.ctx.stroke();
+    }
 }
