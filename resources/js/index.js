@@ -1,56 +1,74 @@
-// START + DIFFICULTY SELECTION
-const startWrapper = document.getElementById(`startWrapper`);
-const difficultySelectForm = document.getElementById(`difficultySelect`);
-const difficultySelect = document.getElementById(`difficulty`);
+import Hangman from './Hangman.js';
 
-// GAME
-const gameWrapper = document.getElementById(`gameWrapper`);
-const guessesText = document.getElementById(`guesses`);
-const wordHolderText = document.getElementById(`wordHolder`);
+// DOM Elements
+const startWrapper = document.getElementById('startWrapper');
+const difficultySelectForm = document.getElementById('difficultySelect');
+const difficultySelect = document.getElementById('difficulty');
 
-// GUESSING FORM
-const guessForm = document.getElementById(`guessForm`);
-const guessInput = document.getElementById(`guessInput`);
+const gameWrapper = document.getElementById('gameWrapper');
+const guessesText = document.getElementById('guesses');
+const wordHolderText = document.getElementById('wordHolder');
 
-// GAME RESET BUTTON
-const resetGame = document.getElementById(`resetGame`);
+const guessForm = document.getElementById('guessForm');
+const guessInput = document.getElementById('guessInput');
 
-// CANVAS
-let canvas = document.getElementById(`hangmanCanvas`);
+const resetGameButton = document.getElementById('resetGame');
+const canvas = document.getElementById('hangmanCanvas');
 
-// The following Try-Catch Block will catch the errors thrown
-try {
-  // Instantiate a game Object using the Hangman class.
+// Initialize Hangman game instance
+const hangman = new Hangman(canvas);
 
-  // add a submit Event Listener for the to the difficultySelectionForm
-  //    get the difficulty input
-  //    call the game start() method, the callback function should do the following
-  //       1. hide the startWrapper
-  //       2. show the gameWrapper
-  //       3. call the game getWordHolderText and set it to the wordHolderText
-  //       4. call the game getGuessesText and set it to the guessesText
-  difficultySelectForm.addEventListener(`submit`, function (event) {});
+// Event listeners
 
-  // add a submit Event Listener to the guessForm
-  //    get the guess input
-  //    call the game guess() method
-  //    set the wordHolderText to the game.getHolderText
-  //    set the guessesText to the game.getGuessesText
-  //    clear the guess input field
-  // Given the Guess Function calls either the checkWin or the onWrongGuess methods
-  // the value of the isOver and didWin would change after calling the guess() function.
-  // Check if the game isOver:
-  //      1. disable the guessInput
-  //      2. disable the guessButton
-  //      3. show the resetGame button
-  // if the game is won or lost, show an alert.
-  guessForm.addEventListener(`submit`, function (e) {});
+// Event listener for difficulty selection form submission
+difficultySelectForm.addEventListener('submit', function (event) {
+    event.preventDefault();
+    const difficulty = difficultySelect.value;
+    hangman.start(difficulty, () => {
+        startWrapper.classList.add('hidden');
+        gameWrapper.classList.remove('hidden');
+        wordHolderText.textContent = hangman.getWordHolderText();
+        guessesText.textContent = hangman.getGuessesText();
+    });
+});
 
-  // add a click Event Listener to the resetGame button
-  //    show the startWrapper
-  //    hide the gameWrapper
-  resetGame.addEventListener(`click`, function (e) {});
-} catch (error) {
-  console.error(error);
-  alert(error);
+// Event listener for guess form submission
+guessForm.addEventListener('submit', function (event) {
+    event.preventDefault();
+    const letter = guessInput.value.trim();
+    try {
+        hangman.guess(letter);
+        wordHolderText.textContent = hangman.getWordHolderText();
+        guessesText.textContent = hangman.getGuessesText();
+        if (hangman.isOver) {
+            endGame();
+        }
+    } catch (error) {
+        alert(error.message);
+    }
+    guessInput.value = '';
+});
+
+// Event listener for reset game button click
+resetGameButton.addEventListener('click', function () {
+    resetGame();
+});
+
+// Function to handle end of game
+function endGame() {
+    if (hangman.didWin) {
+        alert('Congratulations! You guessed the word.');
+    } else {
+        alert(`Game Over! The word was "${hangman.word}".`);
+    }
+    resetGame();
 }
+
+// Function to reset the game state
+function resetGame() {
+    startWrapper.classList.remove('hidden');
+    gameWrapper.classList.add('hidden');
+    hangman.clearCanvas();
+    guessInput.value = '';
+}
+
