@@ -19,4 +19,4 @@ how many points out of 20 do you deserve on this assignment: 20
 
 ### How long it took me to finish this?
 
-I took me around 45 minutes to complete this assinment.
+I took me around 45 minutes to complete this assignment.
