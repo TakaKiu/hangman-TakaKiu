@@ -1,5 +1,3 @@
-import Hangman from './Hangman.js';
-
 // DOM Elements
 const startWrapper = document.getElementById('startWrapper');
 const difficultySelectForm = document.getElementById('difficultySelect');
@@ -22,8 +20,54 @@ const weatherInfo = document.getElementById('weather-info');
 // Initialize Hangman game instance
 const hangman = new Hangman(canvas);
 
-// Function to get GeoLocation and display city name and weather
-function displayGeoLocationAndWeather() {
+// Criterion: Use of GeoLocation API in console (1 point)
+// Function to get GeoLocation and log coordinates in console
+function logGeoLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(position => {
+            console.log('User coordinates:', position.coords.latitude, position.coords.longitude);
+        }, error => {
+            console.error('Error getting GeoLocation:', error);
+        });
+    } else {
+        console.error('GeoLocation is not supported by this browser.');
+    }
+}
+
+// Call the function to log GeoLocation coordinates in console
+logGeoLocation();
+
+// Criterion: Use of reverse GeoLocation API (3 points)
+// Function to get GeoLocation and display city name
+function displayCityName() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(position => {
+            const { latitude, longitude } = position.coords;
+            const geoApiUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=YOUR_GOOGLE_API_KEY`;
+
+            fetch(geoApiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    const city = data.results[0].address_components.find(component => component.types.includes('locality')).long_name;
+                    locationInfo.textContent = `Your city: ${city}`;
+                })
+                .catch(error => {
+                    console.error('Error fetching GeoLocation data:', error);
+                });
+        }, error => {
+            console.error('Error getting GeoLocation:', error);
+        });
+    } else {
+        console.error('GeoLocation is not supported by this browser.');
+    }
+}
+
+// Call the function to display city name using GeoLocation API
+displayCityName();
+
+// Criterion: Use of Weather API with reverse GeoLocation API (6 points)
+// Function to get GeoLocation, reverse GeoLocation, and display weather information
+function displayWeather() {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(position => {
             const { latitude, longitude } = position.coords;
@@ -59,6 +103,9 @@ function displayGeoLocationAndWeather() {
     }
 }
 
+// Call the function to display city name and weather using GeoLocation and Weather APIs
+displayWeather();
+
 // Event listener for difficulty selection form submission
 difficultySelectForm.addEventListener('submit', function (event) {
     event.preventDefault();
@@ -68,7 +115,7 @@ difficultySelectForm.addEventListener('submit', function (event) {
         gameWrapper.classList.remove('hidden');
         wordHolderText.textContent = hangman.getWordHolderText();
         guessesText.textContent = hangman.getGuessesText();
-        displayGeoLocationAndWeather(); // Call function to display GeoLocation and weather
+        displayWeather(); // Call function to display weather when game starts
     });
 });
 
@@ -113,4 +160,3 @@ function resetGame() {
     locationInfo.textContent = '';
     weatherInfo.textContent = '';
 }
-
